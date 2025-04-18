@@ -2,9 +2,48 @@
 <html>
 <head>
     <title>Prompt Party</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        input { padding: 10px; margin: 10px; }
+        button { padding: 10px 20px; cursor: pointer; }
+        #messages { white-space: pre-line; text-align: left; max-width: 600px; margin: 20px auto; }
+    </style>
 </head>
 <body>
-    <h1>Welcome to Prompt Party!</h1>
-    <p>Enter your room code to join.</p>
+    <h1>Prompt Party</h1>
+    <input type="text" id="playerName" placeholder="Enter your name" />
+    <button onclick="joinLobby()">Join Lobby</button>
+    <p id="messages"></p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("http://localhost:7065/gameHub") // Replace with your PC's URL
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("PlayerJoined", (playerName) => {
+            document.getElementById("messages").innerText += playerName + " joined!\n";
+        });
+
+        async function joinLobby() {
+            try {
+                const playerName = document.getElementById("playerName").value;
+                if (!playerName) {
+                    alert("Please enter a name!");
+                    return;
+                }
+                if (connection.state !== "Connected") {
+                    await connection.start();
+                    console.log("Connected to SignalR!");
+                }
+                await connection.invoke("JoinLobby", playerName);
+                console.log("Sent JoinLobby for " + playerName);
+            } catch (err) {
+                console.error("Error: ", err);
+                alert("Failed to join: " + err.message);
+            }
+        }
+    </script>
 </body>
 </html>
